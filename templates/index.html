@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoL Stats Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0A1428;
+            color: #ffffff;
+        }
+        .navbar {
+            background-color: #091428;
+            border-bottom: 2px solid #C89B3C;
+        }
+        .card {
+            background-color: #091428;
+            border: 1px solid #C89B3C;
+            margin-bottom: 20px;
+        }
+        .search-box {
+            background-color: #1E2328;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .stats-container {
+            display: none;
+        }
+        .champion-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid #C89B3C;
+        }
+        .match-card {
+            background-color: #1E2328;
+            border-left: 4px solid;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .victory {
+            border-left-color: #28a745;
+        }
+        .defeat {
+            border-left-color: #dc3545;
+        }
+        .stats-box {
+            background-color: #1E2328;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .error-message {
+            display: none;
+            color: #ff4655;
+            background-color: #1E2328;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .champion-stats {
+            background-color: #1E2328;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .player-stats {
+            background-color: #1E2328;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .modal-content {
+            background-color: #0A1428;
+            color: #ffffff;
+        }
+        .modal-header {
+            border-bottom-color: #C89B3C;
+        }
+        .modal-footer {
+            border-top-color: #C89B3C;
+        }
+        .player-card {
+            background-color: rgba(30, 35, 40, 0.7);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            padding: 15px;
+            transition: transform 0.2s;
+        }
+        .player-card:hover {
+            transform: translateX(5px);
+            background-color: rgba(40, 45, 50, 0.7);
+        }
+        .player-card.highlighted {
+            border: 2px solid #C89B3C;
+        }
+        .player-items {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        .player-items img {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 1px solid #C89B3C;
+        }
+        .team-objectives {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        .objective-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #C89B3C;
+        }
+        .objective-stat i {
+            font-size: 20px;
+        }
+        .objective-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .team-name {
+            color: #C89B3C;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .winner-team {
+            border-left: 4px solid #28a745;
+        }
+        .loser-team {
+            border-left: 4px solid #dc3545;
+        }
+        .stats-bar {
+            height: 4px;
+            background-color: rgba(200, 155, 60, 0.3);
+            margin-top: 5px;
+            border-radius: 2px;
+        }
+        .stats-bar-fill {
+            height: 100%;
+            background-color: #C89B3C;
+            border-radius: 2px;
+        }
+        .stats-row {
+            margin-bottom: 10px;
+        }
+        .progress-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 9999;
+            display: none;
+        }
+        .progress {
+            height: 4px;
+            background-color: rgba(200, 155, 60, 0.2);
+        }
+        .progress-bar {
+            background-color: #C89B3C;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9998;
+        }
+        .loading-content {
+            text-align: center;
+            color: #C89B3C;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(200, 155, 60, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #C89B3C;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        .loading-text {
+            font-size: 1.2em;
+            font-weight: 500;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-container" id="loadingProgress">
+        <div class="progress">
+            <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Loading data...</div>
+        </div>
+    </div>
+    <nav class="navbar navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-gamepad"></i> LoL Stats Tracker
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="search-box">
+            <form id="searchForm" class="d-flex justify-content-center flex-column align-items-center">
+                <div class="input-group mb-3" style="max-width: 500px;">
+                    <select class="form-select" id="region" name="region" style="max-width: 200px;">
+                        <option value="europe" selected>Europe West</option>
+                        <option value="americas">North America</option>
+                        <option value="asia">Korea</option>
+                        <option value="sea">Japan</option>
+                    </select>
+                    <input type="text" class="form-control" id="summonerName" name="summonerName" placeholder="Enter Riot ID (Name#Tag)" required>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="error-message"></div>
+
+        <div class="stats-container">
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body d-flex align-items-center">
+                            <img id="playerAvatar" src="" alt="Player Avatar" class="rounded-circle me-3" style="width: 64px; height: 64px; border: 2px solid #C89B3C;">
+                            <div>
+                                <h3 id="playerNickname" class="mb-1" style="color: #C89B3C;"></h3>
+                                <div id="playerLevel" class="text-muted">Level: </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="stats-box">
+                                        <h5 class="text-center mb-3">Overall Statistics</h5>
+                                        <p class="mb-2">Games Played: <span id="gamesPlayed">0</span></p>
+                                        <p class="mb-2">Wins: <span id="wins">0</span></p>
+                                        <p class="mb-2">Losses: <span id="losses">0</span></p>
+                                        <p class="mb-2">Win Rate: <span id="winRate">0%</span></p>
+                                        <p class="mb-2">KDA Ratio: <span id="kdaRatio">0.00</span></p>
+                                        <p class="mb-2">Avg. Game Duration: <span id="avgGameDuration">00:00</span></p>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="stats-box">
+                                        <h5 class="text-center mb-3">Average Per Game</h5>
+                                        <p class="mb-2">Kills: <span id="avgKills">0.0</span></p>
+                                        <p class="mb-2">Deaths: <span id="avgDeaths">0.0</span></p>
+                                        <p class="mb-2">Assists: <span id="avgAssists">0.0</span></p>
+                                        <p class="mb-2">CS: <span id="avgCS">0.0</span></p>
+                                        <p class="mb-2">Gold: <span id="avgGold">0</span></p>
+                                        <p class="mb-2">Vision Score: <span id="avgVisionScore">0.0</span></p>
+                                        <p class="mb-2">Damage Dealt: <span id="avgDamageDealt">0</span></p>
+                                        <p class="mb-2">Damage Taken: <span id="avgDamageTaken">0</span></p>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="stats-box">
+                                        <h5 class="text-center mb-3">Achievements</h5>
+                                        <p class="mb-2">Double Kills: <span id="doubleKills">0</span></p>
+                                        <p class="mb-2">Triple Kills: <span id="tripleKills">0</span></p>
+                                        <p class="mb-2">Quadra Kills: <span id="quadraKills">0</span></p>
+                                        <p class="mb-2">Penta Kills: <span id="pentaKills">0</span></p>
+                                        <p class="mb-2">Turrets Destroyed: <span id="turretKills">0</span></p>
+                                        <p class="mb-2">Inhibitors Destroyed: <span id="inhibitorKills">0</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <h5 class="text-center mb-3">Most Played Champions</h5>
+                                    <div id="mostPlayedChampions"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5 class="text-center mb-3">Most Played Roles</h5>
+                                    <div id="mostPlayedRoles"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h5 class="text-center mb-3">Champion Statistics</h5>
+                                    <div id="championStats" class="stats-box"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-md-12">
+                                    <h5 class="text-center mb-3">Role Statistics</h5>
+                                    <div id="roleStats" class="stats-box"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <h5 class="text-center mb-3">CS Per Minute Trend</h5>
+                                    <div id="csTrend" class="stats-box" style="height: 300px;"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5 class="text-center mb-3">Position Stats</h5>
+                                    <div id="positionStats" class="stats-box" style="height: 300px;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-md-12">
+                                    <h5 class="text-center mb-3">Most Common Items</h5>
+                                    <div id="commonItems" class="stats-box"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Recent Matches</h5>
+                            <div id="recentMatches"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal do wyświetlania szczegółów gry -->
+    <div class="modal fade" id="matchDetailsModal" tabindex="-1" aria-labelledby="matchDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="matchDetailsModalLabel">Match Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="match-overview p-3" style="background-color: rgba(30, 35, 40, 0.7); border-radius: 8px;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div id="matchGeneralInfo"></div>
+                                        <div id="matchObjectives"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-center mb-3">Team 1</h6>
+                                <div id="team1Players" class="team-players"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-center mb-3">Team 2</h6>
+                                <div id="team2Players" class="team-players"></div>
+                            </div>
+                        </div>
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div id="matchCharts"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">Error</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="errorToastMessage"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+    <script>
+        let currentProgressInterval;
+        let loadingMessages = [
+            "Searching for summoner...",
+            "Analyzing match history...",
+            "Calculating statistics...",
+            "Processing game data...",
+            "Preparing visualization..."
+        ];
+        let currentMessageIndex = 0;
+        let messageInterval;
+
+        function startLoading(initialMessage = "Loading data...") {
+            const progressContainer = document.getElementById('loadingProgress');
+            const progressBar = progressContainer.querySelector('.progress-bar');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingText = document.getElementById('loadingText');
+            
+            progressContainer.style.display = 'block';
+            loadingOverlay.style.display = 'flex';
+            progressBar.style.width = '0%';
+            loadingText.textContent = initialMessage;
+            
+            let progress = 0;
+            if (currentProgressInterval) {
+                clearInterval(currentProgressInterval);
+            }
+            if (messageInterval) {
+                clearInterval(messageInterval);
+            }
+            
+            currentProgressInterval = setInterval(() => {
+                if (progress < 90) {
+                    progress += Math.random() * 15;
+                    progressBar.style.width = Math.min(progress, 90) + '%';
+                }
+            }, 500);
+
+            messageInterval = setInterval(() => {
+                currentMessageIndex = (currentMessageIndex + 1) % loadingMessages.length;
+                loadingText.textContent = loadingMessages[currentMessageIndex];
+            }, 2000);
+        }
+
+        function stopLoading() {
+            const progressContainer = document.getElementById('loadingProgress');
+            const progressBar = progressContainer.querySelector('.progress-bar');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            
+            if (currentProgressInterval) {
+                clearInterval(currentProgressInterval);
+            }
+            if (messageInterval) {
+                clearInterval(messageInterval);
+            }
+            
+            progressBar.style.width = '100%';
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                loadingOverlay.style.display = 'none';
+                progressBar.style.width = '0%';
+                currentMessageIndex = 0;
+            }, 300);
+        }
+
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const summonerName = document.getElementById('summonerName').value;
+            const region = document.getElementById('region').value;
+
+            try {
+                startLoading("Searching for summoner...");
+                const response = await fetch('/search_player', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        summonerName,
+                        region
+                    })
+                });
+
+                const data = await response.json();
+                updateUI(data);
+            } catch (error) {
+                console.error('Error:', error);
+                const errorMessage = document.querySelector('.error-message');
+                errorMessage.textContent = 'An error occurred while searching for the player.';
+                errorMessage.style.display = 'block';
+                document.querySelector('.stats-container').style.display = 'none';
+            } finally {
+                stopLoading();
+            }
+        });
+
+        function updateUI(data) {
+            // Update player info
+            document.getElementById('playerNickname').textContent = data.summonerName || '';
+            document.getElementById('playerLevel').textContent = `Level: ${data.summonerLevel || 0}`;
+            document.getElementById('playerAvatar').src = `http://ddragon.leagueoflegends.com/cdn/13.24.1/img/profileicon/${data.profileIconId || 1}.png`;
+
+            const statsContainer = document.querySelector('.stats-container');
+            const errorMessage = document.querySelector('.error-message');
+            
+            if (data.error) {
+                errorMessage.textContent = data.error;
+                errorMessage.style.display = 'block';
+                statsContainer.style.display = 'none';
+                return;
+            }
+
+            errorMessage.style.display = 'none';
+            statsContainer.style.display = 'block';
+
+            // Podstawowe statystyki
+            document.getElementById('gamesPlayed').textContent = data.games_played;
+            document.getElementById('wins').textContent = data.wins;
+            document.getElementById('losses').textContent = data.losses;
+            document.getElementById('winRate').textContent = data.win_rate;
+            document.getElementById('kdaRatio').textContent = data.kda_ratio;
+            document.getElementById('avgGameDuration').textContent = data.avg_game_duration;
+
+            // Średnie statystyki
+            document.getElementById('avgKills').textContent = data.avg_stats.kills;
+            document.getElementById('avgDeaths').textContent = data.avg_stats.deaths;
+            document.getElementById('avgAssists').textContent = data.avg_stats.assists;
+            document.getElementById('avgCS').textContent = data.avg_stats.cs;
+            document.getElementById('avgGold').textContent = data.avg_stats.gold;
+            document.getElementById('avgVisionScore').textContent = data.avg_stats.vision_score;
+            document.getElementById('avgDamageDealt').textContent = data.avg_stats.damage_dealt;
+            document.getElementById('avgDamageTaken').textContent = data.avg_stats.damage_taken;
+
+            // Osiągnięcia
+            document.getElementById('doubleKills').textContent = data.multikills.double_kills;
+            document.getElementById('tripleKills').textContent = data.multikills.triple_kills;
+            document.getElementById('quadraKills').textContent = data.multikills.quadra_kills;
+            document.getElementById('pentaKills').textContent = data.multikills.penta_kills;
+            document.getElementById('turretKills').textContent = data.objectives.turret_kills;
+            document.getElementById('inhibitorKills').textContent = data.objectives.inhibitor_kills;
+
+            // Najczęściej grani championi
+            const championsContainer = document.getElementById('mostPlayedChampions');
+            championsContainer.innerHTML = '';
+            data.most_played_champions.forEach(([champion, games]) => {
+                const championDiv = document.createElement('div');
+                championDiv.className = 'champion-stats d-flex align-items-center mb-2';
+                championDiv.innerHTML = `
+                    <img src="http://ddragon.leagueoflegends.com/cdn/13.24.1/img/champion/${champion}.png" 
+                         alt="${champion}"
+                         class="champion-icon me-2"
+                         style="width: 40px; height: 40px;">
+                    <div>
+                        <div class="fw-bold">${champion}</div>
+                        <small>${games} games</small>
+                    </div>
+                `;
+                championsContainer.appendChild(championDiv);
+            });
+
+            // Najczęściej grane role
+            const rolesContainer = document.getElementById('mostPlayedRoles');
+            rolesContainer.innerHTML = '';
+            data.most_played_roles.forEach(([role, games]) => {
+                if (role !== 'UNKNOWN') {
+                    const roleDiv = document.createElement('div');
+                    roleDiv.className = 'role-stats d-flex align-items-center mb-2';
+                    roleDiv.innerHTML = `
+                        <div class="role-icon me-2">
+                            <i class="fas ${getRoleIcon(role)}"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">${formatRole(role)}</div>
+                            <small>${games} games</small>
+                        </div>
+                    `;
+                    rolesContainer.appendChild(roleDiv);
+                }
+            });
+
+            // Lista meczy
+            const matchesContainer = document.getElementById('recentMatches');
+            matchesContainer.innerHTML = '';
+            data.matches.forEach(match => {
+                const matchElement = document.createElement('div');
+                matchElement.className = `match-card ${match.win ? 'victory' : 'defeat'}`;
+                matchElement.innerHTML = `
+                    <div class="row align-items-center">
+                        <div class="col-md-1">
+                            <img src="${match.championIcon}" alt="${match.championName}" class="champion-icon">
+                        </div>
+                        <div class="col-md-2">
+                            <div class="fw-bold">${match.championName}</div>
+                            <div>${match.win ? 'Wygrana' : 'Przegrana'}</div>
+                        </div>
+                        <div class="col-md-2">
+                            <div>${match.kills}/${match.deaths}/${match.assists}</div>
+                            <div>KDA: ${match.kda}</div>
+                        </div>
+                        <div class="col-md-2">
+                            <div>CS: ${match.cs}</div>
+                            <div>${match.gameMode}</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div>${match.gameDuration}</div>
+                            <div>${match.gameDate}</div>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary btn-sm" onclick="showMatchDetails('${match.matchId}', '${data.region}')">
+                                Szczegóły
+                            </button>
+                        </div>
+                    </div>
+                `;
+                matchesContainer.appendChild(matchElement);
+            });
+
+            // Champion Statistics
+            const championStatsHtml = Object.entries(data.champion_stats)
+                .map(([champion, stats]) => `
+                    <div class="champion-stats">
+                        <img src="http://ddragon.leagueoflegends.com/cdn/13.24.1/img/champion/${champion}.png" 
+                             alt="${champion}" class="champion-icon">
+                        <div>
+                            <h6>${champion}</h6>
+                            <p>Games: ${stats.games} | Win Rate: ${stats.winRate.toFixed(1)}%<br>
+                               KDA: ${stats.avgKills.toFixed(1)}/${stats.avgDeaths.toFixed(1)}/${stats.avgAssists.toFixed(1)} | 
+                               CS: ${stats.avgCs.toFixed(1)} | 
+                               Damage: ${stats.avgDamage.toFixed(0)}</p>
+                        </div>
+                    </div>
+                `).join('');
+            document.getElementById('championStats').innerHTML = championStatsHtml;
+
+            // Role Statistics
+            const roleStatsHtml = Object.entries(data.role_stats)
+                .filter(([role]) => role !== 'UNKNOWN') 
+                .map(([role, stats]) => `
+                    <div class="role-stats" style="margin-bottom: 10px; padding: 15px; background-color: rgba(30, 35, 40, 0.7); border-radius: 8px;">
+                        <h6>${formatRole(role)} ${getRoleIcon(role)}</h6>
+                        <div class="progress mb-2" style="height: 5px; background-color: rgba(0,0,0,0.3);">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: ${stats.winRate}%; background-color: #C89B3C;" 
+                                 aria-valuenow="${stats.winRate}" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                        <p class="mb-1">Games: ${stats.games} | Win Rate: ${stats.winRate.toFixed(1)}%</p>
+                        <p class="mb-0">KDA: ${stats.avgKills.toFixed(1)}/${stats.avgDeaths.toFixed(1)}/${stats.avgAssists.toFixed(1)} | CS: ${stats.avgCs.toFixed(1)}</p>
+                    </div>
+                `).join('');
+            document.getElementById('roleStats').innerHTML = roleStatsHtml;
+
+            // CS Trend Chart
+            const csTrendData = data.cs_trend
+                .filter(match => match.csPerMin > 0) 
+                .map(match => ({
+                    x: new Date(match.timestamp),
+                    y: match.csPerMin,
+                    text: `CS/min: ${match.csPerMin.toFixed(1)}`
+                }));
+            
+            if (csTrendData.length > 0) {
+                Plotly.newPlot('csTrend', [{
+                    x: csTrendData.map(d => d.x),
+                    y: csTrendData.map(d => d.y),
+                    text: csTrendData.map(d => d.text),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'CS/min',
+                    line: {
+                        color: '#C89B3C',
+                        width: 2
+                    },
+                    marker: {
+                        color: '#C89B3C',
+                        size: 8
+                    },
+                    hoverinfo: 'text+x'
+                }], {
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: {
+                        color: '#ffffff',
+                        family: 'Arial, sans-serif'
+                    },
+                    margin: {t: 20, r: 20, b: 40, l: 50},
+                    xaxis: {
+                        showgrid: true,
+                        gridcolor: 'rgba(200, 155, 60, 0.1)',
+                        tickformat: '%d/%m %H:%M',
+                        tickangle: -45,
+                        title: {
+                            text: 'Match Date',
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    yaxis: {
+                        showgrid: true,
+                        gridcolor: 'rgba(200, 155, 60, 0.1)',
+                        title: {
+                            text: 'CS per Minute',
+                            font: {
+                                size: 12
+                            }
+                        },
+                        range: [0, Math.max(...csTrendData.map(d => d.y)) * 1.1]
+                    },
+                    showlegend: false,
+                    hovermode: 'closest'
+                });
+            } else {
+                document.getElementById('csTrend').innerHTML = '<p class="text-center mt-5">No CS data available</p>';
+            }
+
+            // Position Stats Chart
+            const validPositionStats = data.position_stats
+                .filter(d => d.x !== 'UNKNOWN' && d.x !== undefined && d.value > 0)
+                .filter(d => ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'].includes(d.x));
+
+            if (validPositionStats.length > 0) {
+                // Oblicz średnie statystyki dla każdej pozycji
+                const positionSummary = validPositionStats.reduce((acc, curr) => {
+                    if (!acc[curr.x]) {
+                        acc[curr.x] = {
+                            games: 0,
+                            totalDamage: 0,
+                            totalDamagePercentage: 0
+                        };
+                    }
+                    acc[curr.x].games += 1;
+                    acc[curr.x].totalDamage += curr.value;
+                    acc[curr.x].totalDamagePercentage += curr.y;
+                    return acc;
+                }, {});
+
+                // Przelicz średnie
+                Object.keys(positionSummary).forEach(pos => {
+                    positionSummary[pos].avgDamage = positionSummary[pos].totalDamage / positionSummary[pos].games;
+                    positionSummary[pos].avgDamagePercentage = positionSummary[pos].totalDamagePercentage / positionSummary[pos].games;
+                });
+
+                // Przygotuj dane do wykresu
+                const positions = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
+                const damageTrace = {
+                    x: positions.map(formatRole),
+                    y: positions.map(pos => positionSummary[pos]?.avgDamage || 0),
+                    name: 'Avg Damage',
+                    type: 'bar',
+                    marker: {
+                        color: '#C89B3C',
+                        opacity: 0.7
+                    },
+                    text: positions.map(pos => 
+                        positionSummary[pos] ? 
+                        `Games: ${positionSummary[pos].games}<br>` +
+                        `Avg Damage: ${Math.round(positionSummary[pos].avgDamage).toLocaleString()}<br>` +
+                        `Team Damage: ${(positionSummary[pos].avgDamagePercentage * 100).toFixed(1)}%` :
+                        'No Data'
+                    ),
+                    textposition: 'auto',
+                    hoverinfo: 'text'
+                };
+
+                const percentageTrace = {
+                    x: positions.map(formatRole),
+                    y: positions.map(pos => (positionSummary[pos]?.avgDamagePercentage || 0) * 100),
+                    name: 'Team Damage %',
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    yaxis: 'y2',
+                    line: {
+                        color: '#ffffff',
+                        width: 2
+                    },
+                    marker: {
+                        color: '#ffffff',
+                        size: 8
+                    },
+                    hoverinfo: 'y+name'
+                };
+
+                const layout = {
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: {
+                        color: '#ffffff',
+                        family: 'Arial, sans-serif'
+                    },
+                    margin: {t: 30, r: 50, b: 40, l: 60},
+                    barmode: 'group',
+                    xaxis: {
+                        showgrid: false,
+                        title: {
+                            text: 'Position',
+                            font: { size: 12 }
+                        }
+                    },
+                    yaxis: {
+                        showgrid: true,
+                        gridcolor: 'rgba(200, 155, 60, 0.1)',
+                        title: {
+                            text: 'Average Damage',
+                            font: { size: 12 }
+                        },
+                        tickformat: ',d'
+                    },
+                    yaxis2: {
+                        showgrid: false,
+                        title: {
+                            text: 'Team Damage %',
+                            font: { size: 12 }
+                        },
+                        overlaying: 'y',
+                        side: 'right',
+                        tickformat: '.0%',
+                        range: [0, 100]
+                    },
+                    showlegend: true,
+                    legend: {
+                        x: 0.5,
+                        y: 1.1,
+                        xanchor: 'center',
+                        yanchor: 'top',
+                        orientation: 'h',
+                        bgcolor: 'rgba(0,0,0,0)',
+                        font: { color: '#ffffff' }
+                    },
+                    hovermode: 'closest'
+                };
+
+                Plotly.newPlot('positionStats', [damageTrace, percentageTrace], layout);
+            } else {
+                document.getElementById('positionStats').innerHTML = 
+                    '<p class="text-center mt-5">No position data available</p>';
+            }
+
+            // Most Common Items
+            const commonItemsHtml = data.most_common_items
+                .map(([itemId, count]) => `
+                    <div class="item-stats" style="display: inline-block; margin: 5px; text-align: center;">
+                        <img src="http://ddragon.leagueoflegends.com/cdn/13.24.1/img/item/${itemId}.png" 
+                             alt="Item ${itemId}" style="width: 40px; height: 40px; border: 1px solid #C89B3C;">
+                        <div style="font-size: 0.8em;">Used: ${count}</div>
+                    </div>
+                `).join('');
+            document.getElementById('commonItems').innerHTML = commonItemsHtml;
+        }
+
+        async function showMatchDetails(matchId, region) {
+            try {
+                startLoading("Loading match details...");
+                const response = await fetch(`/match/${matchId}?region=${region}`);
+                const matchData = await response.json();
+                
+                if (matchData.error) {
+                    console.error(matchData.error);
+                    return;
+                }
+
+                // Informacje ogólne o meczu
+                const gameDate = new Date(matchData.info.gameStartTimestamp);
+                const gameDuration = matchData.info.gameDuration;
+                const minutes = Math.floor(gameDuration / 60);
+                const seconds = gameDuration % 60;
+
+                document.getElementById('matchGeneralInfo').innerHTML = `
+                    <div>
+                        <h5>${matchData.info.gameMode}</h5>
+                        <p class="mb-0">
+                            ${gameDate.toLocaleDateString()} ${gameDate.toLocaleTimeString()}<br>
+                            Duration: ${minutes}:${seconds.toString().padStart(2, '0')}
+                        </p>
+                    </div>
+                `;
+
+                // Informacje o celach drużynowych
+                const team1 = matchData.info.teams[0];
+                const team2 = matchData.info.teams[1];
+                
+                document.getElementById('matchObjectives').innerHTML = `
+                    <div class="d-flex gap-4">
+                        <div class="team-objectives ${team1.win ? 'winner-team' : 'loser-team'}">
+                            <div class="objective-stat">
+                                <i class="fas fa-dragon"></i>
+                                <span class="objective-value">${team1.objectives.dragon.kills}</span>
+                            </div>
+                            <div class="objective-stat">
+                                <i class="fas fa-crown"></i>
+                                <span class="objective-value">${team1.objectives.baron.kills}</span>
+                            </div>
+                            <div class="objective-stat">
+                                <i class="fas fa-chess-rook"></i>
+                                <span class="objective-value">${team1.objectives.tower.kills}</span>
+                            </div>
+                            <div class="objective-stat">
+                                <i class="fas fa-skull"></i>
+                                <span class="objective-value">${team1.objectives.champion.kills}</span>
+                            </div>
+                        </div>
+                        <div class="team-objectives ${team2.win ? 'winner-team' : 'loser-team'}">
+                            <div class="objective-stat">
+                                <i class="fas fa-dragon"></i>
+                                <span class="objective-value">${team2.objectives.dragon.kills}</span>
+                            </div>
+                            <div class="objective-stat">
+                                <i class="fas fa-crown"></i>
+                                <span class="objective-value">${team2.objectives.baron.kills}</span>
+                            </div>
+                            <div class="objective-stat">
+                                <i class="fas fa-chess-rook"></i>
+                                <span class="objective-value">${team2.objectives.tower.kills}</span>
+                            </div>
+                            <div class="objective-stat">
+                                <i class="fas fa-skull"></i>
+                                <span class="objective-value">${team2.objectives.champion.kills}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Znajdź maksymalne wartości dla statystyk
+                const maxDamage = Math.max(...matchData.info.participants.map(p => p.totalDamageDealtToChampions));
+                const maxTaken = Math.max(...matchData.info.participants.map(p => p.totalDamageTaken));
+                const maxGold = Math.max(...matchData.info.participants.map(p => p.goldEarned));
+
+                // Podziel graczy na drużyny
+                const team1Players = matchData.info.participants.filter(p => p.teamId === 100);
+                const team2Players = matchData.info.participants.filter(p => p.teamId === 200);
+
+                // Funkcja do renderowania gracza
+                function renderPlayer(player, maxStats) {
+                    const isWinner = player.win;
+                    const damagePercent = (player.totalDamageDealtToChampions / maxStats.damage * 100).toFixed(1);
+                    const takenPercent = (player.totalDamageTaken / maxStats.taken * 100).toFixed(1);
+                    const goldPercent = (player.goldEarned / maxStats.gold * 100).toFixed(1);
+                    const kda = ((player.kills + player.assists) / Math.max(1, player.deaths)).toFixed(2);
+
+                    return `
+                        <div class="player-card ${isWinner ? 'winner-team' : 'loser-team'}">
+                            <div class="d-flex align-items-center gap-3">
+                                <div style="position: relative;">
+                                    <img src="http://ddragon.leagueoflegends.com/cdn/13.24.1/img/champion/${player.championName}.png" 
+                                         alt="${player.championName}" class="champion-icon">
+                                    <span class="champion-level">${player.champLevel}</span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="player-name">${player.summonerName}</span>
+                                        <span class="text-muted">${formatRole(player.teamPosition || 'UNKNOWN')}</span>
+                                    </div>
+                                    <div class="kda-stats mb-2">
+                                        ${player.kills}/${player.deaths}/${player.assists}
+                                        <small class="text-muted ms-2">
+                                            ${kda} KDA
+                                        </small>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <small>
+                                            CS: ${player.totalMinionsKilled + player.neutralMinionsKilled}
+                                            (${((player.totalMinionsKilled + player.neutralMinionsKilled) / (gameDuration / 60)).toFixed(1)}/min)
+                                        </small>
+                                        <small>
+                                            Vision: ${player.visionScore}
+                                        </small>
+                                    </div>
+                                    <div class="stats-row">
+                                        <small>Damage Dealt</small>
+                                        <div class="stats-bar">
+                                            <div class="stats-bar-fill" style="width: ${damagePercent}%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <small>${player.totalDamageDealtToChampions.toLocaleString()}</small>
+                                            <small>${damagePercent}%</small>
+                                        </div>
+                                    </div>
+                                    <div class="stats-row">
+                                        <small>Damage Taken</small>
+                                        <div class="stats-bar">
+                                            <div class="stats-bar-fill" style="width: ${takenPercent}%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <small>${player.totalDamageTaken.toLocaleString()}</small>
+                                            <small>${takenPercent}%</small>
+                                        </div>
+                                    </div>
+                                    <div class="stats-row">
+                                        <small>Gold Earned</small>
+                                        <div class="stats-bar">
+                                            <div class="stats-bar-fill" style="width: ${goldPercent}%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <small>${player.goldEarned.toLocaleString()}</small>
+                                            <small>${goldPercent}%</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="player-items mt-2">
+                                ${[0,1,2,3,4,5,6].map(i => 
+                                    player[`item${i}`] ? 
+                                    `<img src="http://ddragon.leagueoflegends.com/cdn/13.24.1/img/item/${player[`item${i}`]}.png" 
+                                          alt="Item ${i+1}" title="Item ${i+1}">` : 
+                                    `<div style="width: 30px; height: 30px; background-color: rgba(0,0,0,0.3); border-radius: 4px;"></div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Renderuj obie drużyny
+                document.getElementById('team1Players').innerHTML = `
+                    <div class="team-name ${team1.win ? 'text-success' : 'text-danger'}">
+                        ${team1.win ? 'VICTORY' : 'DEFEAT'}
+                    </div>
+                    ${team1Players.map(player => renderPlayer(player, {damage: maxDamage, taken: maxTaken, gold: maxGold})).join('')}
+                `;
+                document.getElementById('team2Players').innerHTML = `
+                    <div class="team-name ${team2.win ? 'text-success' : 'text-danger'}">
+                        ${team2.win ? 'VICTORY' : 'DEFEAT'}
+                    </div>
+                    ${team2Players.map(player => renderPlayer(player, {damage: maxDamage, taken: maxTaken, gold: maxGold})).join('')}
+                `;
+
+                // Show the modal
+                const matchDetailsModal = new bootstrap.Modal(document.getElementById('matchDetailsModal'));
+                matchDetailsModal.show();
+            } catch (error) {
+                console.error('Error fetching match details:', error);
+                // Show error message to user
+                const errorToast = new bootstrap.Toast(document.getElementById('errorToast'));
+                document.getElementById('errorToastMessage').textContent = 'Failed to load match details. Please try again.';
+                errorToast.show();
+            } finally {
+                stopLoading();
+            }
+        }
+
+        function getRoleIcon(role) {
+            switch (role) {
+                case 'TOP':
+                    return 'fa-shield-alt';
+                case 'JUNGLE':
+                    return 'fa-leaf';
+                case 'MIDDLE':
+                    return 'fa-magic';
+                case 'BOTTOM':
+                    return 'fa-crosshairs';
+                case 'UTILITY':
+                    return 'fa-wrench';
+                default:
+                    return 'fa-question';
+            }
+        }
+
+        function formatRole(role) {
+            switch (role) {
+                case 'TOP':
+                    return 'Top';
+                case 'JUNGLE':
+                    return 'Jungle';
+                case 'MIDDLE':
+                    return 'Mid';
+                case 'BOTTOM':
+                    return 'ADC';
+                case 'UTILITY':
+                    return 'Support';
+                default:
+                    return 'ARAM';
+            }
+        }
+    </script>
+</body>
+</html>
